@@ -64,8 +64,8 @@ def evaluate_board(board):
     complete_lines = count_complete_lines(board)
     bumpiness = calculate_bumpiness(heights)
     
-    score = (0.6 *max_height) +(0.1 * holes) + (-0.5 * complete_lines) + (0.4 * bumpiness)
-    #score = (-0.5 * max_height) + (-0.7 * holes) + (1.0 * complete_lines) + (-0.2 * bumpiness)
+    #score = (0.6 *max_height) +(0.1 * holes) + (-0.5 * complete_lines) + (0.4 * bumpiness)
+    score = (-0.5 * max_height) + (-0.7 * holes) + (1.0 * complete_lines) + (-0.2 * bumpiness)
     return score
 
 def get_column_heights(board):
