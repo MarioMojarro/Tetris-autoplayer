@@ -11,12 +11,16 @@ class Player:
         
         actions = []
 
+
         if best_move['rotation'] is not None:
-            actions.append(best_move['rotation'])
+            if board.falling is not None:
+                actions.append(best_move['rotation'])
         if best_move['translation'] < 0:
-            actions.extend([Direction.Left] * -best_move['translation'])
+            if board.falling is not None:   
+                actions.extend([Direction.Left] * -best_move['translation'])
         elif best_move['translation'] > 0:
-            actions.extend([Direction.Right] * best_move['translation'])
+            if board.falling is not None:
+                actions.extend([Direction.Right] * best_move['translation'])
         actions.append(Direction.Drop)
         
         return actions
@@ -35,13 +39,19 @@ def get_possible_moves(board):
         for translation in range(-board.width + 1, board.width):
             sandbox = board.clone()
             if rotation is not None:
-                sandbox.rotate(rotation)
+                if board.falling is not None:
+                    sandbox.rotate(rotation)
             if translation < 0:
                 for _ in range(-translation):
-                    sandbox.move(Direction.Left)
+                    if board.falling is not None:
+                        sandbox = sandbox.clone()
+                        sandbox.move(Direction.Left)
             elif translation > 0:
                 for _ in range(translation):
-                    sandbox.move(Direction.Right)
+                    if board.falling is not None:
+                        sandbox = sandbox.clone()
+                        sandbox.move(Direction.Right)
+            sandbox = sandbox.clone()
             landed = sandbox.move(Direction.Drop)
             if not is_valid_position(sandbox):
                 continue
@@ -65,7 +75,7 @@ def evaluate_board(board):
     bumpiness = calculate_bumpiness(heights)
     
     #score = (0.6 *max_height) +(0.1 * holes) + (-0.5 * complete_lines) + (0.4 * bumpiness)
-    score = (-0.5 * max_height) + (-0.7 * holes) + (1.0 * complete_lines) + (-0.2 * bumpiness)
+    score = (-0.5 * max_height) + (-0.7 * holes) + (1.5 * complete_lines) + (-0.2 * bumpiness)
     return score
 
 def get_column_heights(board):
