@@ -11,6 +11,8 @@ class Player:
         
         actions = []
 
+        print(str(board.falling))
+
 
         if best_move['rotation'] is not None:
             if board.falling is not None:
@@ -21,7 +23,8 @@ class Player:
         elif best_move['translation'] > 0:
             if board.falling is not None:
                 actions.extend([Direction.Right] * best_move['translation'])
-        actions.append(Direction.Drop)
+        if board.falling is not None:
+            actions.append(Direction.Drop)
         
         return actions
 
@@ -75,7 +78,7 @@ def evaluate_board(board):
     bumpiness = calculate_bumpiness(heights)
     
     #score = (0.6 *max_height) +(0.1 * holes) + (-0.5 * complete_lines) + (0.4 * bumpiness)
-    score = (-0.5 * max_height) + (-0.7 * holes) + (1.5 * complete_lines) + (-0.2 * bumpiness)
+    score = (0.1 * max_height) + (-0.1 * holes) + (0.3 * complete_lines) + (-0.1 * bumpiness)
     return score
 
 def get_column_heights(board):
