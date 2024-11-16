@@ -3,16 +3,14 @@ from random import Random
 import time
 
 class Player:
+
     def choose_action(self, board):
         moves = get_possible_moves(board)
         if not moves:
-            return None 
+            return None
         best_move = choose_best_move(moves)
         
         actions = []
-
-        print(str(board.falling))
-
 
         if best_move['rotation'] is not None:
             if board.falling is not None:
@@ -28,36 +26,41 @@ class Player:
         
         return actions
 
-""" TO DO: Crear una función que me devuelva la mejor acción no solo teniendo en cuenta
-completar una linea, si no puntuando más que las lineas se completen de 4 en 4.
-
-"""
-
 def get_possible_moves(board):
     if board.falling is None:
         return []
+    
     moves = []
     rotations = [None, Rotation.Clockwise, Rotation.Anticlockwise] 
+
+    print(str(board.falling))
+
     for rotation in rotations:
         for translation in range(-board.width + 1, board.width):
             sandbox = board.clone()
+            if sandbox.falling is None:
+                continue  # Skip if clone does not have a falling block
             if rotation is not None:
-                if board.falling is not None:
-                    sandbox.rotate(rotation)
+                if sandbox.falling is not None:
+                    if board.falling is not None:
+                        sandbox.rotate(rotation)
             if translation < 0:
                 for _ in range(-translation):
-                    if board.falling is not None:
-                        sandbox = sandbox.clone()
-                        sandbox.move(Direction.Left)
+                    if sandbox.falling is not None:
+                        if board.falling is not None:
+                            sandbox.move(Direction.Left)
             elif translation > 0:
                 for _ in range(translation):
-                    if board.falling is not None:
-                        sandbox = sandbox.clone()
-                        sandbox.move(Direction.Right)
-            sandbox = sandbox.clone()
-            landed = sandbox.move(Direction.Drop)
+                    if sandbox.falling is not None:
+                        if board.falling is not None:
+                            sandbox.move(Direction.Right)
+            if sandbox.falling is not None:
+                if board.falling is not None:
+                    sandbox.move(Direction.Drop)
+
             if not is_valid_position(sandbox):
                 continue
+
             score = evaluate_board(sandbox)
             moves.append({
                 'rotation': rotation,
@@ -77,8 +80,9 @@ def evaluate_board(board):
     complete_lines = count_complete_lines(board)
     bumpiness = calculate_bumpiness(heights)
     
-    #score = (0.6 *max_height) +(0.1 * holes) + (-0.5 * complete_lines) + (0.4 * bumpiness)
-    score = (0.1 * max_height) + (-0.1 * holes) + (0.3 * complete_lines) + (-0.1 * bumpiness)
+    #score = (0.5 * max_height) + (-0.2 * holes) + (-1 * complete_lines) + (-0.2 * bumpiness) #+ (1.0 * complete_two_lines) 
+    #score = (-1 * max_height) + (-0.9 * holes) + (3 * complete_lines) + (-0.4 * bumpiness)
+    score = (-0.5 * max_height) + (-0.7 * holes) + (3 * complete_lines) + (-0.2 * bumpiness)
     return score
 
 def get_column_heights(board):
@@ -114,8 +118,9 @@ def calculate_bumpiness(heights):
     return bumpiness
 
 def is_valid_position(board):
+
     if board.falling is None:
-        return False
+        return True
     for (x, y) in board.falling.cells:
         if x < 0 or x >= board.width or y < 0 or y >= board.height:
             return False
@@ -124,3 +129,4 @@ def is_valid_position(board):
     return True
 
 SelectedPlayer = Player
+
