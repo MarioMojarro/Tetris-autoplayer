@@ -16,8 +16,6 @@ class Player:
             if heights > 16 and board.bombs_remaining > 0:
                 actions.append(Action.Bomb)
                 actions.append(Direction.Drop)
-        if best_move['score'] < -60 and board.discards_remaining > 0:
-            actions.append(Action.Discard)
         if best_move['rotation'] is not None:
             if board.falling is not None:
                 actions.append(best_move['rotation'])
@@ -32,26 +30,24 @@ class Player:
         
         return actions
 
+
 def get_possible_moves(board):
     if board.falling is None:
         return []
     
     moves = []
-    moves2= []
     rotations = [None, Rotation.Clockwise, Rotation.Anticlockwise, Rotation.Clockwise.Clockwise] 
-    #rotations2 = [None, Rotation.Clockwise]
-
-    print(str(board.falling))
+    old_sum_height = get_height_sum(board)
 
     for rotation in rotations:
             for translation in range(-board.width + 1, board.width):
                sandbox = board.clone()
                if sandbox.falling is None:
-                  continue  # Skip if clone does not have a falling block
+                  continue
                if rotation is not None:
                     if sandbox.falling is not None:
-                       if board.falling is not None:
-                            sandbox.rotate(rotation)
+                      if board.falling is not None:
+                           sandbox.rotate(rotation)
                if translation < 0:
                     for _ in range(-translation):
                         if sandbox.falling is not None:
@@ -69,10 +65,10 @@ def get_possible_moves(board):
                if not is_valid_position(sandbox):
                     continue
                
-               #moves2 = get_possible_moves2(board)
-               #best_move2 = choose_best_move(moves2)
-               #score2 = best_move2['score']
-               score = evaluate_board(sandbox)# + score2
+               moves2 = get_possible_moves2(board)
+               best_move2 = choose_best_move(moves2)
+               score2 = best_move2['score']
+               score = evaluate_board(sandbox, old_sum_height) + score2
                moves.append({
                     'rotation': rotation,
                     'translation': translation,
@@ -83,53 +79,48 @@ def get_possible_moves(board):
 def get_possible_moves2(board):
     if board.falling is None:
         return []
-    
+
     moves2 = []
     rotations = [None, Rotation.Clockwise, Rotation.Anticlockwise, Rotation.Clockwise.Clockwise] 
-    #rotations2 = [None, Rotation.Clockwise]
-
-    print(str(board.falling))
+    old_sum_height = get_height_sum(board)
 
     for rotation in rotations:
-            for translation in range(-board.width + 1, board.width):
-               
-               sandbox = board.clone()
-               if sandbox.falling is None:
-                  continue  # Skip if clone does not have a falling block
-               if rotation is not None:
+        for translation in range(-board.width + 1, board.width):
+            
+            sandbox = board.clone()
+            if sandbox.falling is None:
+                continue  # Skip if clone does not have a falling block
+            if rotation is not None:
+                if sandbox.falling is not None:
+                    sandbox.rotate(rotation)
+            if translation < 0:
+                for _ in range(-translation):
                     if sandbox.falling is not None:
-                       if board.next.falling is not None:
-                            sandbox.rotate(rotation)
-               if translation < 0:
-                    for _ in range(-translation):
-                        if sandbox.falling is not None:
-                            if board.next.falling is not None:
-                                sandbox.move(Direction.Left)
-               elif translation > 0:
-                    for _ in range(translation):
-                        if sandbox.falling is not None:
-                            if board.next.falling is not None:
-                                sandbox.move(Direction.Right)
-               if sandbox.falling is not None:
-                    if board.next.falling is not None:
-                        sandbox.move(Direction.Drop)
+                        sandbox.move(Direction.Left)
+            elif translation > 0:
+                for _ in range(translation):
+                    if sandbox.falling is not None:
+                            sandbox.move(Direction.Right)
+            if sandbox.falling is not None:
+                    sandbox.move(Direction.Drop)
 
-               if not is_valid_position(sandbox):
-                    continue
+            if not is_valid_position(sandbox):
+                continue
 
-               score = evaluate_board(sandbox)
-               moves2.append({
-                    'rotation': rotation,
-                    'translation': translation,
-                    'score': score
-                })
+            score = evaluate_board(sandbox, old_sum_height)
+            moves2.append({
+                'rotation': rotation,
+                'translation': translation,
+                'score': score
+            })
     return moves2
 
 def choose_best_move(moves):
     best_move = max(moves, key=lambda x: x['score'])
     return best_move
 
-def evaluate_board(board):
+def evaluate_board(board, old_height_sum):
+    linesmultiplier = 0
     heights = get_column_heights(board)
     max_height = max(heights)
     sum_heights = get_height_sum(board)
@@ -139,17 +130,20 @@ def evaluate_board(board):
     three_lines = can_complete_three_lines(board)
     four_lines = can_complete_four_lines(board)
     bumpiness = calculate_bumpiness(heights)
-    
-   
 
-   #old weights
-    #score = (-0.5 * max_height) + (-0.7 * holes) + (3 * complete_lines) + (-0.2 * bumpiness)
+    if old_height_sum == sum_heights + 40:
+        linesmultiplier = 10000
+    elif old_height_sum >= sum_heights + 28:
+        linesmultiplier = 1000
+    else:
+        linesmultiplier = 0
+    
+    #Not working Panic Zone
     if max_height > 18:
         score = (-1.5 * sum_heights) + (-1.5 * max_height) + (100 * complete_lines) + ( 150 * two_lines) + ( 200 * three_lines) + (1000 * four_lines)
     else:
     #especific weight
-        #score = (-0.510066 * sum_heights) + (0.760667 * complete_lines) + (-0.35663 * holes) + (-0.184483 * bumpiness)
-        score = (-0.510066 * sum_heights) + (-0.51 * complete_lines) + (-0.26 * two_lines) + (0.760667 * three_lines) + (10 * four_lines) + (-0.35663 * holes) + (-0.184483 * bumpiness)
+        score = (-0.51 * sum_heights) + (-0.51 * complete_lines) + (-0.26 * two_lines) + (0.76 * three_lines) + (10 * four_lines) + (-0.36 * holes) + (-0.184 * bumpiness) + linesmultiplier
     return score
 
 def get_column_heights(board):
@@ -168,7 +162,6 @@ def get_height_sum(board):
         column_cells = [y for (cx, y) in board.cells if cx == x]
         if column_cells:
             heightsum += board.height - min(column_cells)
-            print("heightsum: " + str(heightsum))
     return heightsum
 
 def count_holes(board, heights):
