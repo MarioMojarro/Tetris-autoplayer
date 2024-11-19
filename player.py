@@ -19,6 +19,9 @@ class Player:
         if best_move['rotation'] is not None:
             if board.falling is not None:
                 actions.append(best_move['rotation'])
+        if best_move['rotation'] is not None:
+            if board.falling is not None:
+                actions.append(best_move['rotation2'])
         if best_move['translation'] < 0:
             if board.falling is not None:   
                 actions.extend([Direction.Left] * -best_move['translation'])
@@ -35,11 +38,15 @@ def get_possible_moves(board):
     if board.falling is None:
         return []
     
+    #TO DO TAKE INTO ACCOUNT ALL THE POSSIBLE ROTATIONS
+    #QUE TARDE MENOS
     moves = []
-    rotations = [None, Rotation.Clockwise, Rotation.Anticlockwise, Rotation.Clockwise.Clockwise] 
+    rotations = [Rotation.Clockwise, Rotation.Anticlockwise]
+    rotations2 = [None, Rotation.Clockwise, Rotation.Anticlockwise] 
     old_sum_height = get_height_sum(board)
 
     for rotation in rotations:
+        for rotation2 in rotations2:
             for translation in range(-board.width + 1, board.width):
                sandbox = board.clone()
                if sandbox.falling is None:
@@ -48,6 +55,9 @@ def get_possible_moves(board):
                     if sandbox.falling is not None:
                       if board.falling is not None:
                            sandbox.rotate(rotation)
+               if rotation2 is not None:
+                    if sandbox.falling is not None:
+                        sandbox.rotate(rotation2)
                if translation < 0:
                     for _ in range(-translation):
                         if sandbox.falling is not None:
@@ -65,14 +75,15 @@ def get_possible_moves(board):
                if not is_valid_position(sandbox):
                     continue
                
-               moves2 = get_possible_moves2(board)
-               best_move2 = choose_best_move(moves2)
-               score2 = best_move2['score']
-               score = evaluate_board(sandbox, old_sum_height) + score2
+               #moves2 = get_possible_moves2(board)
+               #best_move2 = choose_best_move(moves2)
+               #score2 = best_move2['score']
+               score = evaluate_board(sandbox, old_sum_height)# + score2
                moves.append({
                     'rotation': rotation,
                     'translation': translation,
-                    'score': score
+                    'score': score,
+                    'rotation2': rotation2   
                 })
     return moves
 
@@ -81,38 +92,44 @@ def get_possible_moves2(board):
         return []
 
     moves2 = []
-    rotations = [None, Rotation.Clockwise, Rotation.Anticlockwise, Rotation.Clockwise.Clockwise] 
+    rotations = [Rotation.Clockwise, Rotation.Anticlockwise] 
+    rotations2 = [None, Rotation.Clockwise, Rotation.Anticlockwise]
     old_sum_height = get_height_sum(board)
 
     for rotation in rotations:
-        for translation in range(-board.width + 1, board.width):
-            
-            sandbox = board.clone()
-            if sandbox.falling is None:
-                continue  # Skip if clone does not have a falling block
-            if rotation is not None:
+        for rotation2 in rotations2:
+            for translation in range(-board.width + 1, board.width):
+                
+                sandbox = board.clone()
+                if sandbox.falling is None:
+                    continue  # Skip if clone does not have a falling block
+                if rotation is not None:
+                    if sandbox.falling is not None:
+                        sandbox.rotate(rotation)
+                if rotation is not None:
+                    if sandbox.falling is not None:
+                        sandbox.rotate(rotation2)
+                if translation < 0:
+                    for _ in range(-translation):
+                        if sandbox.falling is not None:
+                            sandbox.move(Direction.Left)
+                elif translation > 0:
+                    for _ in range(translation):
+                        if sandbox.falling is not None:
+                                sandbox.move(Direction.Right)
                 if sandbox.falling is not None:
-                    sandbox.rotate(rotation)
-            if translation < 0:
-                for _ in range(-translation):
-                    if sandbox.falling is not None:
-                        sandbox.move(Direction.Left)
-            elif translation > 0:
-                for _ in range(translation):
-                    if sandbox.falling is not None:
-                            sandbox.move(Direction.Right)
-            if sandbox.falling is not None:
-                    sandbox.move(Direction.Drop)
+                        sandbox.move(Direction.Drop)
 
-            if not is_valid_position(sandbox):
-                continue
+                if not is_valid_position(sandbox):
+                    continue
 
-            score = evaluate_board(sandbox, old_sum_height)
-            moves2.append({
-                'rotation': rotation,
-                'translation': translation,
-                'score': score
-            })
+                score = evaluate_board(sandbox, old_sum_height)
+                moves2.append({
+                    'rotation': rotation,
+                    'translation': translation,
+                    'score': score,
+                    'rotation2': rotation2
+                })
     return moves2
 
 def choose_best_move(moves):
