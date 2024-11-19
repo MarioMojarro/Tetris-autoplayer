@@ -43,7 +43,6 @@ def get_possible_moves(board):
     moves = []
     rotations = [Rotation.Clockwise, Rotation.Anticlockwise]
     rotations2 = [None, Rotation.Clockwise, Rotation.Anticlockwise] 
-    old_sum_height = get_height_sum(board)
 
     for rotation in rotations:
         for rotation2 in rotations2:
@@ -71,6 +70,8 @@ def get_possible_moves(board):
                if sandbox.falling is not None:
                     if board.falling is not None:
                         sandbox.move(Direction.Drop)
+               old_cells = len(board.cells)
+
 
                if not is_valid_position(sandbox):
                     continue
@@ -78,7 +79,7 @@ def get_possible_moves(board):
                #moves2 = get_possible_moves2(board)
                #best_move2 = choose_best_move(moves2)
                #score2 = best_move2['score']
-               score = evaluate_board(sandbox, old_sum_height)# + score2
+               score = evaluate_board(sandbox, board)# + score2
                moves.append({
                     'rotation': rotation,
                     'translation': translation,
@@ -86,7 +87,7 @@ def get_possible_moves(board):
                     'rotation2': rotation2   
                 })
     return moves
-
+"""
 def get_possible_moves2(board):
     if board.falling is None:
         return []
@@ -94,7 +95,6 @@ def get_possible_moves2(board):
     moves2 = []
     rotations = [Rotation.Clockwise, Rotation.Anticlockwise] 
     rotations2 = [None, Rotation.Clockwise, Rotation.Anticlockwise]
-    old_sum_height = get_height_sum(board)
 
     for rotation in rotations:
         for rotation2 in rotations2:
@@ -123,7 +123,7 @@ def get_possible_moves2(board):
                 if not is_valid_position(sandbox):
                     continue
 
-                score = evaluate_board(sandbox, old_sum_height)
+                score = evaluate_board(sandbox, old_cells)
                 moves2.append({
                     'rotation': rotation,
                     'translation': translation,
@@ -131,37 +131,77 @@ def get_possible_moves2(board):
                     'rotation2': rotation2
                 })
     return moves2
+"""
 
 def choose_best_move(moves):
     best_move = max(moves, key=lambda x: x['score'])
     return best_move
 
-def evaluate_board(board, old_height_sum):
+def evaluate_board(board, old_board):
+    new_cells = len(board.cells)
     linesmultiplier = 0
     heights = get_column_heights(board)
     max_height = max(heights)
     sum_heights = get_height_sum(board)
     holes = count_holes(board, heights)
-    complete_lines = count_complete_lines(board)
-    two_lines = can_complete_two_lines(board)
-    three_lines = can_complete_three_lines(board)
-    four_lines = can_complete_four_lines(board)
     bumpiness = calculate_bumpiness(heights)
 
-    if old_height_sum == sum_heights + 40:
-        linesmultiplier = 10000
-    elif old_height_sum >= sum_heights + 28:
-        linesmultiplier = 1000
+    score_difference = board.score - old_board.score
+
+    if score_difference < 25:
+        complete_lines = 0
+    elif score_difference < 100:
+        complete_lines = 1
+    elif score_difference < 400:
+        complete_lines = 2
+    elif score_difference < 1600:
+        complete_lines = 3
     else:
+        complete_lines = 4
+    if complete_lines != 0:
+        print("complete lines: ", complete_lines)
+
+    if complete_lines == 4:
+        linesmultiplier = 100000000000000000
+    if complete_lines == 3:
+        linesmultiplier = 0.15
+    if complete_lines == 2:
+        linesmultiplier = -2.1
+    if complete_lines == 1:
+        linesmultiplier = -4.9
+    if complete_lines == 3:
         linesmultiplier = 0
     
     #Not working Panic Zone
-    if max_height > 18:
-        score = (-1.5 * sum_heights) + (-1.5 * max_height) + (100 * complete_lines) + ( 150 * two_lines) + ( 200 * three_lines) + (1000 * four_lines)
+    if max_height > 14:
+        score = (-20 * sum_heights) + (1000 * complete_lines) + (-0.5 * holes) + (-0.2 * bumpiness) + (-13 * max_height)
     else:
     #especific weight
-        score = (-0.51 * sum_heights) + (-0.51 * complete_lines) + (-0.26 * two_lines) + (0.76 * three_lines) + (10 * four_lines) + (-0.36 * holes) + (-0.184 * bumpiness) + linesmultiplier
+        score = (-0.38 * sum_heights) + (linesmultiplier * complete_lines) + (-4.4 * holes) + (-0.384 * bumpiness)
     return score
+
+"""WEIGHTS THAT GAVE ME 24k ONCE (average 6k - 16k):
+
+if complete_lines == 4:
+        linesmultiplier = 100000000000000000
+    if complete_lines == 3:
+        linesmultiplier = 0.15
+    if complete_lines == 2:
+        linesmultiplier = -2.1
+    if complete_lines == 1:
+        linesmultiplier = -4.9
+    if complete_lines == 3:
+        linesmultiplier = 0
+    
+    #Not working Panic Zone
+    if max_height > 14:
+        score = (-20 * sum_heights) + (1000 * complete_lines) + (-0.5 * holes) + (-0.2 * bumpiness) + (-13 * max_height)
+    else:
+    #especific weight
+        score = (-0.38 * sum_heights) + (linesmultiplier * complete_lines) + (-4.4 * holes) + (-0.284 * bumpiness)
+    return score
+    
+    """
 
 def get_column_heights(board):
     heights = [0] * board.width
@@ -191,34 +231,6 @@ def count_holes(board, heights):
                 if (x, y) not in board.cells:
                     holes += 1
     return holes
-
-def count_complete_lines(board):
-    lines = 0
-    for y in range(board.height):
-        if all((x, y) in board.cells for x in range(board.width)):
-            lines += 1
-    return lines
-
-def can_complete_two_lines(board):
-    completed_lines = []
-    for y in range(board.height):
-        if all((x, y) in board.cells for x in range(board.width)):
-            completed_lines.append(y)
-    return len(completed_lines) == 2
-
-def can_complete_three_lines(board):
-    completed_lines = []
-    for y in range(board.height):
-        if all((x, y) in board.cells for x in range(board.width)):
-            completed_lines.append(y)
-    return len(completed_lines) == 3
-
-def can_complete_four_lines(board):
-    completed_lines = []
-    for y in range(board.height):
-        if all((x, y) in board.cells for x in range(board.width)):
-            completed_lines.append(y)
-    return len(completed_lines) == 4
 
 def calculate_bumpiness(heights):
     bumpiness = sum(abs(heights[i] - heights[i+1]) for i in range(len(heights)-1))
