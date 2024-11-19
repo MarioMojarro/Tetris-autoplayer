@@ -162,6 +162,26 @@ def evaluate_board(board, old_board):
         print("complete lines: ", complete_lines)
 
     if complete_lines == 4:
+        linesmultiplier = 100000000000000000000000
+    if complete_lines == 3:
+        linesmultiplier = 0.05
+    if complete_lines == 2:
+        linesmultiplier = -2.6
+    if complete_lines == 1:
+        linesmultiplier = -6.3
+    if complete_lines == 3:
+        linesmultiplier = 0
+    
+    #Not working Panic Zone
+    #if max_height > 14:
+     #   score = (-20 * sum_heights) + (1000 * complete_lines) + (-0.5 * holes) + (-0.2 * bumpiness) + (-13 * max_height)
+    #else:
+    #especific weight
+    score = (-0.6 * sum_heights) + (linesmultiplier * complete_lines) + (-5.9 * holes) + (-0.534 * bumpiness)
+    return score
+
+"""AVERAGE 16k:
+if complete_lines == 4:
         linesmultiplier = 100000000000000000
     if complete_lines == 3:
         linesmultiplier = 0.15
@@ -179,7 +199,7 @@ def evaluate_board(board, old_board):
     #especific weight
         score = (-0.38 * sum_heights) + (linesmultiplier * complete_lines) + (-4.4 * holes) + (-0.384 * bumpiness)
     return score
-
+"""
 """WEIGHTS THAT GAVE ME 24k ONCE (average 6k - 16k):
 
 if complete_lines == 4:
