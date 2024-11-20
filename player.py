@@ -1,4 +1,4 @@
-from board import Direction, Rotation, Action
+from board import Direction, Rotation, Action, Block, Shape
 from random import Random
 import time
 
@@ -13,7 +13,7 @@ class Player:
         actions = []
 
         for heights in get_column_heights(board):
-            if heights > 16 and board.bombs_remaining > 0:
+            if heights > 16 and board.bombs_remaining > 0 and board.falling.shape != 'I':
                 actions.append(Action.Bomb)
                 actions.append(Direction.Drop)
         if best_move['rotation'] is not None:
@@ -37,56 +37,315 @@ class Player:
 def get_possible_moves(board):
     if board.falling is None:
         return []
-    
-    #TO DO TAKE INTO ACCOUNT ALL THE POSSIBLE ROTATIONS
-    #QUE TARDE MENOS
+
     moves = []
     rotations = [Rotation.Clockwise, Rotation.Anticlockwise]
     rotations2 = [None, Rotation.Clockwise, Rotation.Anticlockwise] 
+    rotations3 = [None, Rotation.Clockwise]
 
-    for rotation in rotations:
-        for rotation2 in rotations2:
+    if board.falling.shape == 'I' or board.falling.shape == 'Z' or board.falling.shape == 'S':
+        for rotation in rotations3:
             for translation in range(-board.width + 1, board.width):
-               sandbox = board.clone()
-               if sandbox.falling is None:
-                  continue
-               if rotation is not None:
+                sandbox = board.clone()
+                if sandbox.falling is None:
+                    continue
+                if rotation is not None:
                     if sandbox.falling is not None:
-                      if board.falling is not None:
-                           sandbox.rotate(rotation)
-               if rotation2 is not None:
-                    if sandbox.falling is not None:
-                        sandbox.rotate(rotation2)
-               if translation < 0:
+                        if board.falling is not None:                           
+                            sandbox.rotate(rotation)
+                if translation < 0:
                     for _ in range(-translation):
                         if sandbox.falling is not None:
                             if board.falling is not None:
                                 sandbox.move(Direction.Left)
-               elif translation > 0:
+                elif translation > 0:
                     for _ in range(translation):
                         if sandbox.falling is not None:
                             if board.falling is not None:
                                 sandbox.move(Direction.Right)
-               if sandbox.falling is not None:
+                if sandbox.falling is not None:
                     if board.falling is not None:
                         sandbox.move(Direction.Drop)
-               old_cells = len(board.cells)
-
-
-               if not is_valid_position(sandbox):
+                if not is_valid_position(sandbox):
+                        continue
+                old_cells = len(board.cells)
+                #moves2 = get_possible_moves2(board)
+                #best_move2 = choose_best_move(moves2)
+                #score2 = best_move2['score']
+                score = evaluate_board(sandbox, board) #+ score2
+                moves.append({
+                'rotation': rotation,
+                'translation': translation,
+                'score': score,
+                'rotation2': rotation2   
+                })
+        return moves
+    elif board.falling.shape == 'O':
+        for translation in range(-board.width + 1, board.width):
+                sandbox = board.clone()
+                if sandbox.falling is None:
                     continue
-               
-               #moves2 = get_possible_moves2(board)
-               #best_move2 = choose_best_move(moves2)
-               #score2 = best_move2['score']
-               score = evaluate_board(sandbox, board)# + score2
-               moves.append({
+                if translation < 0:
+                    for _ in range(-translation):
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Left)
+                elif translation > 0:
+                    for _ in range(translation):
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Right)
+                if sandbox.falling is not None:
+                    if board.falling is not None:
+                        sandbox.move(Direction.Drop)
+                if not is_valid_position(sandbox):
+                        continue
+                old_cells = len(board.cells)
+                #moves2 = get_possible_moves2(board)
+                #best_move2 = choose_best_move(moves2)
+                #score2 = best_move2['score']
+                score = evaluate_board(sandbox, board)# + score2
+                moves.append({
+                'rotation': rotation,
+                'translation': translation,
+                'score': score,
+                'rotation2': rotation2   
+                })
+        return moves
+    elif board.falling.shape == 'L' or board.falling.shape == 'J' or board.falling.shape == 'T':
+        for rotation in rotations:
+            for rotation2 in rotations2:
+                for translation in range(-board.width + 1, board.width):
+                    sandbox = board.clone()
+                    if sandbox.falling is None:
+                        continue
+                    if rotation is not None:
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.rotate(rotation)
+                    if rotation2 is not None:
+                            if sandbox.falling is not None:
+                                sandbox.rotate(rotation2)
+                    if translation < 0:
+                        for _ in range(-translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Left)
+                    elif translation > 0:
+                        for _ in range(translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Right)
+                    if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Drop)
+                    if not is_valid_position(sandbox):
+                        continue
+                    old_cells = len(board.cells)
+                    #moves2 = get_possible_moves2(board)
+                    #best_move2 = choose_best_move(moves2)
+                    #score2 = best_move2['score']
+                    score = evaluate_board(sandbox, board) #+ score2
+                    moves.append({
                     'rotation': rotation,
                     'translation': translation,
                     'score': score,
                     'rotation2': rotation2   
+                    })
+        return moves
+    else:
+        for rotation in rotations:
+            for rotation2 in rotations2:
+                for translation in range(-board.width + 1, board.width):
+                    sandbox = board.clone()
+                    if sandbox.falling is None:
+                        continue
+                    if rotation is not None:
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.rotate(rotation)
+                    if rotation2 is not None:
+                        if sandbox.falling is not None:
+                            sandbox.rotate(rotation2)
+                    if translation < 0:
+                        for _ in range(-translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Left)
+                    elif translation > 0:
+                        for _ in range(translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Right)
+                    if sandbox.falling is not None:
+                        if board.falling is not None:
+                            sandbox.move(Direction.Drop)
+                    if not is_valid_position(sandbox):
+                        continue
+                    old_cells = len(board.cells)
+                    #moves2 = get_possible_moves2(board)
+                    #best_move2 = choose_best_move(moves2)
+                    #score2 = best_move2['score']
+                    score = evaluate_board(sandbox, board) #+ score2
+                    moves.append({
+                    'rotation': rotation,
+                    'translation': translation,
+                    'score': score,
+                    'rotation2': rotation2   
+                    })
+        return moves
+"""   
+def get_possible_moves2(board):
+    if board.falling is None:
+        return []
+    
+    #TO DO TAKE INTO ACCOUNT ALL THE POSSIBLE ROTATIONS
+    #QUE TARDE MENOS
+    moves2 = []
+    rotations = [Rotation.Clockwise, Rotation.Anticlockwise]
+    rotations2 = [None, Rotation.Clockwise, Rotation.Anticlockwise] 
+    rotations3 = [None, Rotation.Clockwise]
+
+    if board.falling.shape == 'I' or board.falling.shape == 'Z' or board.falling.shape == 'S':
+        for rotation in rotations3:
+            for translation in range(-board.width + 1, board.width):
+                sandbox = board.clone()
+                if sandbox.falling is None:
+                    continue
+                if rotation is not None:
+                    if sandbox.falling is not None:
+                        if board.falling is not None:                           
+                            sandbox.rotate(rotation)
+                if translation < 0:
+                    for _ in range(-translation):
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Left)
+                elif translation > 0:
+                    for _ in range(translation):
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Right)
+                if sandbox.falling is not None:
+                    if board.falling is not None:
+                        sandbox.move(Direction.Drop)
+                if not is_valid_position(sandbox):
+                        continue
+                old_cells = len(board.cells)
+                score = evaluate_board(sandbox, board)
+                moves2.append({
+                'rotation': rotation,
+                'translation': translation,
+                'score': score,
+                'rotation2': rotation2   
                 })
-    return moves
+        return moves2
+    elif board.falling.shape == 'O':
+        for translation in range(-board.width + 1, board.width):
+                sandbox = board.clone()
+                if sandbox.falling is None:
+                    continue
+                if translation < 0:
+                    for _ in range(-translation):
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Left)
+                elif translation > 0:
+                    for _ in range(translation):
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Right)
+                if sandbox.falling is not None:
+                    if board.falling is not None:
+                        sandbox.move(Direction.Drop)
+                if not is_valid_position(sandbox):
+                        continue
+                old_cells = len(board.cells)
+                score = evaluate_board(sandbox, board)
+                moves2.append({
+                'rotation': rotation,
+                'translation': translation,
+                'score': score,
+                'rotation2': rotation2   
+                })
+        return moves2
+    elif board.falling.shape == 'L' or board.falling.shape == 'J' or board.falling.shape == 'T':
+        for rotation in rotations:
+            for rotation2 in rotations2:
+                for translation in range(-board.width + 1, board.width):
+                    sandbox = board.clone()
+                    if sandbox.falling is None:
+                        continue
+                    if rotation is not None:
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.rotate(rotation)
+                    if rotation2 is not None:
+                            if sandbox.falling is not None:
+                                sandbox.rotate(rotation2)
+                    if translation < 0:
+                        for _ in range(-translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Left)
+                    elif translation > 0:
+                        for _ in range(translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Right)
+                    if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.move(Direction.Drop)
+                    if not is_valid_position(sandbox):
+                        continue
+                    old_cells = len(board.cells)
+                    score = evaluate_board(sandbox, board)
+                    moves2.append({
+                    'rotation': rotation,
+                    'translation': translation,
+                    'score': score,
+                    'rotation2': rotation2   
+                    })
+        return moves2
+    else:
+        for rotation in rotations:
+            for rotation2 in rotations2:
+                for translation in range(-board.width + 1, board.width):
+                    sandbox = board.clone()
+                    if sandbox.falling is None:
+                        continue
+                    if rotation is not None:
+                        if sandbox.falling is not None:
+                            if board.falling is not None:
+                                sandbox.rotate(rotation)
+                    if rotation2 is not None:
+                        if sandbox.falling is not None:
+                            sandbox.rotate(rotation2)
+                    if translation < 0:
+                        for _ in range(-translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Left)
+                    elif translation > 0:
+                        for _ in range(translation):
+                            if sandbox.falling is not None:
+                                if board.falling is not None:
+                                    sandbox.move(Direction.Right)
+                    if sandbox.falling is not None:
+                        if board.falling is not None:
+                            sandbox.move(Direction.Drop)
+                    if not is_valid_position(sandbox):
+                        continue
+                    old_cells = len(board.cells)
+                    score = evaluate_board(sandbox, board)
+                    moves2.append({
+                    'rotation': rotation,
+                    'translation': translation,
+                    'score': score,
+                    'rotation2': rotation2   
+                    })
+        return moves2
+"""
 """
 def get_possible_moves2(board):
     if board.falling is None:
@@ -158,30 +417,8 @@ def evaluate_board(board, old_board):
         complete_lines = 3
     else:
         complete_lines = 4
-    if complete_lines != 0:
-        print("complete lines: ", complete_lines)
 
     if complete_lines == 4:
-        linesmultiplier = 100000000000000000000000
-    if complete_lines == 3:
-        linesmultiplier = 0.05
-    if complete_lines == 2:
-        linesmultiplier = -2.6
-    if complete_lines == 1:
-        linesmultiplier = -6.3
-    if complete_lines == 3:
-        linesmultiplier = 0
-    
-    #Not working Panic Zone
-    #if max_height > 14:
-     #   score = (-20 * sum_heights) + (1000 * complete_lines) + (-0.5 * holes) + (-0.2 * bumpiness) + (-13 * max_height)
-    #else:
-    #especific weight
-    score = (-0.6 * sum_heights) + (linesmultiplier * complete_lines) + (-5.9 * holes) + (-0.534 * bumpiness)
-    return score
-
-"""AVERAGE 16k:
-if complete_lines == 4:
         linesmultiplier = 100000000000000000
     if complete_lines == 3:
         linesmultiplier = 0.15
@@ -193,35 +430,29 @@ if complete_lines == 4:
         linesmultiplier = 0
     
     #Not working Panic Zone
-    if max_height > 14:
-        score = (-20 * sum_heights) + (1000 * complete_lines) + (-0.5 * holes) + (-0.2 * bumpiness) + (-13 * max_height)
-    else:
     #especific weight
-        score = (-0.38 * sum_heights) + (linesmultiplier * complete_lines) + (-4.4 * holes) + (-0.384 * bumpiness)
+    score = (-0.38 * sum_heights) + (linesmultiplier * complete_lines) + (-14 * holes) + (-0.384 * bumpiness)
     return score
-"""
-"""WEIGHTS THAT GAVE ME 24k ONCE (average 6k - 16k):
 
-if complete_lines == 4:
+
+    """if complete_lines == 4:
         linesmultiplier = 100000000000000000
     if complete_lines == 3:
-        linesmultiplier = 0.15
+        linesmultiplier = 4
     if complete_lines == 2:
-        linesmultiplier = -2.1
+        linesmultiplier = -0.5
     if complete_lines == 1:
-        linesmultiplier = -4.9
+        linesmultiplier = -1.5
     if complete_lines == 3:
         linesmultiplier = 0
     
     #Not working Panic Zone
     if max_height > 14:
-        score = (-20 * sum_heights) + (1000 * complete_lines) + (-0.5 * holes) + (-0.2 * bumpiness) + (-13 * max_height)
+        score = (-0.51 * sum_heights) + (-0.51 * complete_lines) + (-0.36 * holes) + (-0.184 * bumpiness)
     else:
     #especific weight
-        score = (-0.38 * sum_heights) + (linesmultiplier * complete_lines) + (-4.4 * holes) + (-0.284 * bumpiness)
-    return score
-    
-    """
+        score = (-0.41 * sum_heights) + (linesmultiplier * complete_lines) + (-2.9 * holes) + (-0.284 * bumpiness)
+    return score"""
 
 def get_column_heights(board):
     heights = [0] * board.width
@@ -251,6 +482,13 @@ def count_holes(board, heights):
                 if (x, y) not in board.cells:
                     holes += 1
     return holes
+
+def count_complete_lines(board):
+    lines = 0
+    for y in range(board.height):
+        if all((x, y) in board.cells for x in range(board.width)):
+            lines += 1
+    return lines
 
 def calculate_bumpiness(heights):
     bumpiness = sum(abs(heights[i] - heights[i+1]) for i in range(len(heights)-1))
