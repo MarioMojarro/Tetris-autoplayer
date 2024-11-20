@@ -69,9 +69,13 @@ def get_possible_moves(board):
                 if not is_valid_position(sandbox):
                         continue
                 old_cells = len(board.cells)
-                moves2 = get_possible_moves2(board)
-                best_move2 = choose_best_move(moves2)
-                score2 = best_move2['score']
+                score = evaluate_board(sandbox, board)
+                if score > -25:
+                    moves2 = get_possible_moves2(board)
+                    best_move2 = choose_best_move(moves2)
+                    score2 = best_move2['score']
+                else:
+                    score2 = 0
                 score = evaluate_board(sandbox, board) + score2
                 moves.append({
                 'rotation': rotation,
@@ -101,9 +105,13 @@ def get_possible_moves(board):
                 if not is_valid_position(sandbox):
                         continue
                 old_cells = len(board.cells)
-                moves2 = get_possible_moves2(board)
-                best_move2 = choose_best_move(moves2)
-                score2 = best_move2['score']
+                score = evaluate_board(sandbox, board)
+                if score > -25:
+                    moves2 = get_possible_moves2(board)
+                    best_move2 = choose_best_move(moves2)
+                    score2 = best_move2['score']
+                else:
+                    score2 = 0
                 score = evaluate_board(sandbox, board) + score2
                 moves.append({
                 'rotation': rotation,
@@ -142,9 +150,13 @@ def get_possible_moves(board):
                     if not is_valid_position(sandbox):
                         continue
                     old_cells = len(board.cells)
-                    moves2 = get_possible_moves2(board)
-                    best_move2 = choose_best_move(moves2)
-                    score2 = best_move2['score']
+                    score = evaluate_board(sandbox, board)
+                    if score > -25:
+                        moves2 = get_possible_moves2(board)
+                        best_move2 = choose_best_move(moves2)
+                        score2 = best_move2['score']
+                    else:
+                        score2 = 0
                     score = evaluate_board(sandbox, board) + score2
                     moves.append({
                     'rotation': rotation,
@@ -183,9 +195,13 @@ def get_possible_moves(board):
                     if not is_valid_position(sandbox):
                         continue
                     old_cells = len(board.cells)
-                    moves2 = get_possible_moves2(board)
-                    best_move2 = choose_best_move(moves2)
-                    score2 = best_move2['score']
+                    score = evaluate_board(sandbox, board)
+                    if score > -25:
+                        moves2 = get_possible_moves2(board)
+                        best_move2 = choose_best_move(moves2)
+                        score2 = best_move2['score']
+                    else:
+                        score2 = 0
                     score = evaluate_board(sandbox, board) + score2
                     moves.append({
                     'rotation': rotation,
@@ -419,22 +435,17 @@ def evaluate_board(board, old_board):
         complete_lines = 4
 
     if complete_lines == 4:
-        linesmultiplier = 100000000000000000
-    if complete_lines == 3:
-        linesmultiplier = 4
-    if complete_lines == 2:
-        linesmultiplier = -0.5
-    if complete_lines == 1:
-        linesmultiplier = -1.5
+        linesmultiplier = 10000000000000000000000
     if complete_lines == 3:
         linesmultiplier = 0
+    if complete_lines == 2:
+        linesmultiplier = -2.6
+    if complete_lines == 1:
+        linesmultiplier = -6.8
+    if complete_lines == 0:
+        linesmultiplier = 0
     
-    #Not working Panic Zone
-    if max_height > 14:
-        score = (-0.51 * sum_heights) + (-0.51 * complete_lines) + (-0.36 * holes) + (-0.184 * bumpiness)
-    else:
-    #especific weight
-        score = (-0.41 * sum_heights) + (linesmultiplier * complete_lines) + (-2.9 * holes) + (-0.284 * bumpiness)
+    score = (-0.6 * sum_heights) + (linesmultiplier * complete_lines) + (-6.3 * holes) + (-0.534 * bumpiness)
     return score
 
 def get_column_heights(board):
